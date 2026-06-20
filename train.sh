@@ -19,8 +19,12 @@ cd "$(dirname "$0")"
 
 # --- EDIT THESE for your machine ------------------------------------------
 NUM_GPUS=1
-DATA_DIR="./data/mayo_npy"          # folder of *.npy HU slices
+DATA_DIR="./data/mayo_npy"          # folder of .npy/.npz OR raw DICOM (.IMA/.dcm)
 CKPT=""                             # empty = from scratch; or path to resume
+NCPUS=4                             # DataLoader workers per process. Raise this
+                                    # (e.g. 8-16) when reading DICOM directly so
+                                    # GPU does not wait on per-slice decoding.
+BATCH_SIZE=2                        # 512^2 fp16: 2~13GB, 1~9GB
 # --------------------------------------------------------------------------
 
 if [ "${NUM_GPUS}" -gt 1 ]; then
@@ -38,7 +42,8 @@ ${LAUNCH} train_pfgm.py \
     --channel_mult 1,2,4,8,16 \
     --num_res_blocks 1 \
     --dims 2 \
-    --batch_size 2 \
+    --batch_size ${BATCH_SIZE} \
+    --ncpus ${NCPUS} \
     --use_fp16 True \
     --lr 1e-4 \
     --lr_anneal_steps 180000 \
