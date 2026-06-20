@@ -1,0 +1,10 @@
+# Install PyTorch for your CUDA version first, e.g.:
+#   conda install pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia
+torch
+torchvision
+numpy
+scipy
+tqdm
+pydicom          # only for convert_dicom_to_npy.py (DICOM -> .npy)
+python-hostlist  # distributed training helper
+blobfile         # checkpoint IO (used by utils/logger, dist_util)

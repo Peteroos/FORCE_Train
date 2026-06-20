@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data/
+checkpoints_pfgm/
+logs/
+*.pth
+*.npy
+*.npz
