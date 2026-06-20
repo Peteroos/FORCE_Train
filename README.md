@@ -42,7 +42,19 @@ pip install -r requirements.txt
 
 ## 1. Prepare data / 准备数据
 
-Convert Mayo full-dose DICOM to per-slice `.npy` in **standard HU** (water=0):
+The dataloader reads **raw DICOM (`.IMA`/`.dcm`) directly** as well as
+`.npy`/`.npz`, recursing into sub-folders. Files must be `512×512` slices in
+**standard HU** (water=0). Use **all training patients** (exclude your test
+patients, e.g. L333 / L506).
+
+dataloader **可直读 DICOM(`.IMA`/`.dcm`)**,也支持 `.npy`/`.npz`,会递归子目录。要求 512×512、标准 HU(水=0);放**所有训练患者**(排除测试患者 L333/L506)。
+
+**Option A — no conversion (recommended): point `DATA_DIR` straight at the DICOM folder.**
+直接把 `DATA_DIR` 指向 DICOM 目录即可,无需转换。DICOM 在加载时现场做 HU 换算
+(`pixel * RescaleSlope + RescaleIntercept`)。需要 `pip install pydicom`。
+
+**Option B — pre-convert to `.npy` (faster I/O for repeated epochs):**
+若想要更快的反复读取,可先转成 `.npy`:
 
 ```bash
 python convert_dicom_to_npy.py \
@@ -50,11 +62,7 @@ python convert_dicom_to_npy.py \
     --output_dir ./data/mayo_npy
 ```
 
-Each `*.npy` is one `512×512` float32 slice in HU. Put **all training patients**
-here (exclude your test patients, e.g. L333 / L506). The dataloader recurses
-into sub-folders.
-
-每个 `.npy` 是一张 512×512、float32、标准 HU 的切片;把**所有训练患者**放进去(排除测试患者 L333/L506)。
+Then set `DATA_DIR=./data/mayo_npy`. / 然后把 `DATA_DIR` 指向它。
 
 ## 2. Train / 训练
 

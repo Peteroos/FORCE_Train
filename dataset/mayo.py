@@ -80,9 +80,12 @@ def RadomGenerator(ndct, ldct):
 
 class MayoDataset(Dataset):
     def __init__(self, root, split='train', **augment_kwargs):
-        npz_files = glob.glob(os.path.join(root, '**', '*.npz'), recursive=True)
-        npy_files = glob.glob(os.path.join(root, '**', '*.npy'), recursive=True)
-        self.list = np.array(sorted(npz_files + npy_files))
+        # Accept pre-converted .npy/.npz OR raw DICOM (.IMA/.dcm) directly --
+        # no separate conversion step needed. DICOM is read + HU-rescaled on the fly.
+        files = []
+        for pat in ('*.npz', '*.npy', '*.IMA', '*.ima', '*.dcm', '*.DCM'):
+            files += glob.glob(os.path.join(root, '**', pat), recursive=True)
+        self.list = np.array(sorted(set(files)))
         self.data_len = len(self.list)
         self.split = split
         self.data_len = len(self.list)
@@ -91,6 +94,16 @@ class MayoDataset(Dataset):
         self.split = split
 
     def _load_sample(self, data_path):
+        low = data_path.lower()
+        if low.endswith('.ima') or low.endswith('.dcm'):
+            # Read DICOM directly and convert to HU (slope/intercept), same as
+            # convert_dicom_to_npy.py -- avoids the .npy pre-conversion step.
+            import pydicom
+            ds = pydicom.dcmread(data_path, force=True)
+            slope = float(getattr(ds, 'RescaleSlope', 1))
+            intercept = float(getattr(ds, 'RescaleIntercept', 0))
+            hu = ds.pixel_array.astype(np.float32) * slope + intercept
+            return hu, None
         data = np.load(data_path)
         if data_path.endswith('.npz'):
             ndct = data['ndct'].astype(np.float32)
